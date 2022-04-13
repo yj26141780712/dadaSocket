@@ -11,17 +11,70 @@
 <body>
     <script src="https://cdn.socket.io/socket.io-1.4.6.js"></script>
     <script src="./node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="socket.js"></script>
     <style>
         .box {
             padding: 10px;
         }
+
+        pre {
+            outline: 1px solid #ccc;
+            padding: 5px;
+            margin: 5px;
+        }
+
+        .string {
+            color: green;
+        }
+
+        .number {
+            color: darkorange;
+        }
+
+        .boolean {
+            color: blue;
+        }
+
+        .null {
+            color: magenta;
+        }
+
+        .key {
+            color: red;
+        }
+
+        .mj-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .mj {
+            padding: 4px;
+            margin-right: 4px;
+            border: 1px solid;
+            width: 20px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
     </style>
     <div>
+        <div class="box">
+            <span>出牌顺位：</span>
+            <span id="chupaiIndex"></span>
+        </div>
         <div class="box">
             <span>user1</span>
             <button id="auth1">验证</button>
             <button id="btnLogin1">
                 登录
+            </button>
+            <button id="btnReady1">
+                准备
             </button>
             <button id="btnRole1">
                 创建role
@@ -35,6 +88,30 @@
             <span>roomid:</span>
             <span id="roomid"></span>
         </div>
+        <div class="box">
+            <button id="dingque1">
+                定缺
+            </button>
+            <button id="chupai1">
+                出牌
+            </button>
+            <input type="text" id="chupaiIndex1" style="width: 60px;">
+            <button id="peng1">
+                碰
+            </button>
+            <button id="gang1">
+                杠
+            </button>
+            <button id="hu1">
+                胡
+            </button>
+            <button id="guo1">
+                过
+            </button>
+        </div>
+        <div class="box" id="user1-pai">
+
+        </div>
         <div class="box" id="user1">
 
         </div>
@@ -44,12 +121,39 @@
             <button id="btnLogin2">
                 登录
             </button>
+            <button id="btnReady2">
+                准备
+            </button>
             <button id="btnRole2">
                 创建role
             </button>
             <button id="btnAddRoom2">
                 加入room
             </button>
+        </div>
+        <div class="box">
+            <button id="dingque2">
+                定缺
+            </button>
+            <button id="chupai2">
+                出牌
+            </button>
+            <input type="text" id="chupaiIndex2" style="width: 60px;">
+            <button id="peng2">
+                碰
+            </button>
+            <button id="gang2">
+                杠
+            </button>
+            <button id="hu2">
+                胡
+            </button>
+            <button id="guo2">
+                过
+            </button>
+        </div>
+        <div class="box" id="user2-pai">
+
         </div>
         <div class="box" id="user2">
 
@@ -60,12 +164,39 @@
             <button id="btnLogin3">
                 登录
             </button>
+            <button id="btnReady3">
+                准备
+            </button>
             <button id="btnRole3">
                 创建role
             </button>
             <button id="btnAddRoom3">
                 加入room
             </button>
+        </div>
+        <div class="box">
+            <button id="dingque3">
+                定缺
+            </button>
+            <button id="chupai3">
+                出牌
+            </button>
+            <input type="text" id="chupaiIndex3" style="width: 60px;">
+            <button id="peng3">
+                碰
+            </button>
+            <button id="gang3">
+                杠
+            </button>
+            <button id="hu3">
+                胡
+            </button>
+            <button id="guo3">
+                过
+            </button>
+        </div>
+        <div class="box" id="user3-pai">
+
         </div>
         <div class="box" id="user3">
 
@@ -76,6 +207,9 @@
             <button id="btnLogin4">
                 登录
             </button>
+            <button id="btnReady4">
+                准备
+            </button>
             <button id="btnRole4">
                 创建role
             </button>
@@ -83,321 +217,33 @@
                 加入room
             </button>
         </div>
+        <div class="box">
+            <button id="dingque4">
+                定缺
+            </button>
+            <button id="chupai4">
+                出牌
+            </button>
+            <input type="text" id="chupaiIndex4" style="width: 60px;">
+            <button id="peng4">
+                碰
+            </button>
+            <button id="gang4">
+                杠
+            </button>
+            <button id="hu4">
+                胡
+            </button>
+            <button id="guo4">
+                过
+            </button>
+        </div>
+        <div class="box" id="user4-pai">
+        </div>
         <div class="box" id="user4">
-
         </div>
     </div>
-
-    <script>
-        const ip = `120.79.100.219`;
-        const url = `http://${ip}:9000`;
-        const clientUrl = `http://${ip}:9001`;
-        const roomUrl = `http://${ip}:9002`;
-        const gameUrl = `http://${ip}:9003`;
-        let roomid = '';
-        const obj = {
-            user1: {},
-            user2: {},
-            user3: {},
-            user4: {}
-        };
-
-        const room = {};
-        if (localStorage.getItem('room')) {
-            room = JSON.parse(localStorage.getItem('room'));
-        }
-
-        for (let i = 0; i < 4; i++) {
-            const user = getUser(i);
-            const btnGuest = $(`#auth${i + 1}`);
-            btnGuest.on('click', function () {
-                auth(user.name).then(res => {
-                    if (res.errcode === 0) {
-                        user.account = res.account;
-                        user.sign = res.sign;
-                        refresh(user);
-                    }
-                })
-            });
-            const btnLogin = $(`#btnLogin${i + 1}`);
-            btnLogin.on('click', function () {
-                login(user.account, user.sign)
-                    .then(res => {
-                        if (res.errcode === 0) {
-                            user.account = res.account;
-                            // user.sign = res.sign;
-                            user.coins = res.coins;
-                            user.exp = res.exp;
-                            user.gems = res.gems;
-                            user.ip = res.ip;
-                            user.userid = res.userid;
-                            user.roomid = res.roomid;
-                            refresh(user);
-                            if (user.roomid) {
-                                roomid = user.roomid;
-                                return enterRoom(user.account, user.sign, user.roomid);
-                            }
-                        }
-                    })
-                    .then(res => {
-                        if (res && res.errcode === 0) {
-                            createSocket(user, res);
-                        }
-                    });
-            });
-            const btnRole = $(`#btnRole${i + 1}`);
-            btnRole.on('click', function () {
-                createRole(user.account, user.sign, user.name).then(res => {
-                    if (res.errcode === 0) {
-                        console.log('创建成功');
-                    }
-                    console.log(res.errmsg);
-                });
-            });
-            const btnAddRoom = $(`#btnAddRoom${i + 1}`);
-            btnAddRoom.on('click', function () {
-                enterRoom(user.account, user.sign, roomid).then(res => {
-                    createSocket(user, res);
-                });
-            });
-        }
-
-        // 创建房间
-        $('#btnCreateRoom1').on('click', function () {
-            const user1 = obj['user1'];
-            createRoom(user1.account, user1.sign, JSON.stringify({
-                type: 'xzdd',
-                difen: 0,
-                zimo: 0,
-                jiangdui: false,
-                huansanzhang: false,
-                zuidafanshu: 0,
-                jushuxuanze: 0,
-                dianganghua: 0,
-                menqing: false,
-                tiandihu: false
-            })).then(res => {
-                if (res.errcode === 0) {
-                    room = res;
-                    localStorage.setItem('room', JSON.stringify(room));
-                }
-            })
-        });
-
-        function getUser(i) {
-            const name = `user${i + 1}`;
-            const user = obj[name];
-            user.name = name;
-            return user;
-        }
-
-        function auth(account) {
-            return new Promise((resolve) => {
-                $.ajax({
-                    method: 'get',
-                    url: `${url}/auth?account=${account}&password=${account}`,
-                    success: (data) => {
-                        resolve(data);
-                    }
-                });
-            })
-        }
-
-        function login(account, sign) {
-            return new Promise((resolve) => {
-                $.ajax({
-                    method: 'get',
-                    url: `${clientUrl}/login?account=${account}&sign=${sign}`,
-                    success: (data) => {
-                        resolve(data);
-                    }
-                });
-            })
-        }
-
-        function createRole(account, sign, name) {
-            return new Promise((resolve) => {
-                $.ajax({
-                    method: 'get',
-                    url: `${clientUrl}/create_user?account=${account}&sign=${sign}&name=${name}`,
-                    success: (data) => {
-                        resolve(data);
-                    }
-                });
-            })
-        }
-
-        function createRoom(account, sign, conf) {
-            return new Promise((resolve) => {
-                $.ajax({
-                    method: 'get',
-                    url: `${clientUrl}/create_private_room${encode({
-                        account,
-                        sign,
-                        conf
-                    })}`,
-                    success: (data) => {
-                        resolve(data);
-                    }
-                })
-            })
-        }
-
-        function enterRoom(account, sign, roomId) {
-            return new Promise((resolve) => {
-                $.ajax({
-                    method: 'get',
-                    url: `${clientUrl}/enter_private_room${encode({
-                        account,
-                        sign,
-                        roomid: roomId
-                    })}`,
-                    success: (data) => {
-                        resolve(data);
-                    }
-                })
-            })
-        }
-
-        function createSocket(user, res) {
-            const sip = res.ip;
-            const sport = res.port;
-            user.sio = io(`http://${sip}:${sport}`);
-            addSocketEmit(user);
-            user.sio.on('connect', () => {
-                user.sio.emit('login', JSON.stringify({
-                    token: res.token,
-                    roomid: res.roomid,
-                    time: res.time,
-                    sign: res.sign
-                }));
-            });
-            user.sio.on("disconnect", () => {
-                console.log('连接失败')
-                user.sio.connect();
-            });
-
-            user.sio.on("connect_error", (error) => {
-                console.log(error);
-            });
-
-            user.sio.on("connect_failed", (error) => {
-                console.log(error);
-            });
-        }
-
-        function addSocketEmit(user) {
-            const socket = user.sio;
-            socket.on('login_result', function (res) {
-                if (res.errcode === 0) {
-                    const data = res.data;
-                    user.game = {
-                        roomId: data.roomid,
-                        conf: data.conf,
-                        maxGames: data.conf.maxGames,
-                        numofgames: data.conf.numofgames,
-                        seats: data.seats,
-                        isOver: false,
-                        seatindex: getSeatIndex(data.seats, user.userid)
-                    };
-                    refresh(user)
-                }
-            });
-
-            socket.on('login_finished', function (res) {
-                console.log(res);
-            });
-
-            socket.on('exit_result', function (res) {
-
-            });
-
-            socket.on('exit_notify_push', function (res) {
-
-            });
-
-            socket.on('game_holds_push', function (res) {
-
-            });
-
-            socket.on('game_playing_push', function (res) {
-                console.log(res);
-            });
-
-            socket.on('new_user_comes_push', function (res) {
-                const seatindex = res.seatindex;
-                if (user.game.seats[seatindex].userid > 0) {
-                    user.game.seats[seatindex].online = true;
-                } else {
-                    user.game.seats[seatindex] = data;
-                }
-                refresh(user);
-            });
-
-            socket.on('game_begin_push', function (res) {
-                console.log(res);
-            });
-
-            socket.on('game_sync_push', function (res) {
-                const data = res;
-                const game = user.game;
-                game.numofmj = data.numofmj;
-                game.gamestate = data.state;
-                if (game.gamestate === 'dingque') {
-                    game.isDingQueing = true;
-                } else if (game.gamestate === 'huanpai') {
-                    game.isHuanSanZhang = true;
-                }
-                game.turn = data.turn;
-                game.button = data.button;
-                game.chuPai = data.chuPai;
-                for (let i = 0; i < 4; i++) {
-                    let seat1 = game.seats[i];
-                    let seat2 = data.seats[i];
-                    seat1.holds = seat2.holds;
-                    seat1.folds = seat2.folds;
-                    seat1.angangs = seat2.angangs;
-                    seat1.diangangs = seat2.diangangs;
-                    seat1.wangangs = seat2.wangangs;
-                    seat1.pengs = seat2.pengs;
-                    seat1.dingque = seat2.que;
-                    seat1.hued = seat2.hued;
-                    seat1.iszimo = seat2.iszimo;
-                    seat1.huinfo = seat2.huinfo;
-                    seat1.huanpais = seat2.huanpais;
-                    if (i === game.seatIndex) {
-                        game.dingque = seat2.que;
-                    }
-                }
-                refresh(user);
-            });
-        }
-
-        function getSeatIndex(seats, userId) {
-            return seats.findIndex(x => x.userid === userId);
-        }
-
-
-        function encode(params) {
-            let str = '';
-            if (params) {
-                const arr = [];
-                for (const key in params) {
-                    const value = params[key] === null || params[key] === undefined ? '' : params[key];
-                    arr.push(`${key}=${value}`);
-                }
-                if (arr.length > 0) {
-                    str = '?' + arr.join('&');
-                }
-            }
-            return str;
-        }
-
-        function refresh(user) {
-            const name = user.name;
-            $(`#${name}`).html(JSON.stringify({ ...user, sio: '' }));
-        }
-    </script>
+    <script src="main.js"></script>
 </body>
 
 </html>
