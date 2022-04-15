@@ -111,16 +111,16 @@ for (let i = 0; i < 4; i++) {
     btnDingque.on('click', function () {
         showDingQueChoice(user);
     });
-    const btnChupai = $(`#chupai${i + 1}`);
-    btnChupai.on('click', function () {
-        const index = $(`#chupaiIndex${i + 1}`);
-        const pai = Number(index[0].value);
-        const seat = user.game.seats[user.game.seatindex];
-        const holds = seat.holds;
-        if (holds.indexOf(pai) > -1) {
-            chupai(user, pai);
-        }
-    });
+    // const btnChupai = $(`#chupai${i + 1}`);
+    // btnChupai.on('click', function () {
+    //     const index = $(`#chupaiIndex${i + 1}`);
+    //     const pai = Number(index[0].value);
+    //     const seat = user.game.seats[user.game.seatindex];
+    //     const holds = seat.holds;
+    //     if (holds.indexOf(pai) > -1) {
+    //         chupai(user, pai);
+    //     }
+    // });
 
     const btnGuo = $(`#guo${i + 1}`)
     btnGuo.on('click', function () {
@@ -143,7 +143,7 @@ for (let i = 0; i < 4; i++) {
     });
 }
 
-$('.box').on('click', '.mj', function () {
+$('.box').on('click', '.mjh', function () {
     if (gangUser) {
         const id = $(this)[0].id;
         const pai = Number(id.split('-')[1]);

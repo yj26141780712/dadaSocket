@@ -1,3 +1,5 @@
+let heartTimer;
+let closeTimer;
 function createSocket(user, res) {
     const sip = res.ip;
     const sport = res.port;
@@ -23,12 +25,44 @@ function createSocket(user, res) {
     user.sio.on("connect_failed", (error) => {
         console.log(error);
     });
+
+    user.sio.on("game_pong", function () {
+        console.log('game_pong')
+        resetHeart();
+        startHeart(user.sio);
+    });
+    user.sio.onAny((event, ...args) => {
+        console.log(`got ${event}`);
+    });
+}
+
+function resetHeart() {
+    clearTimeout(heartTimer);
+    clearTimeout(closeTimer);
+}
+
+function startHeart(socket) { // 开启心跳
+    heartTimer = setTimeout(() => {
+        console.log('game_ping')
+        socket.emit('game_ping');
+        closeTimer = setTimeout(() => {
+            close(socket);
+        }, 10000);
+    }, 5000)
+}
+
+function close(socket) {
+    if (socket && socket.connected) {
+        socket.connected = false;
+        socket.disconnect();
+        socket = null;
+    }
 }
 
 function addSocketEmit(user) {
     const socket = user.sio;
     socket.on('login_result', function (res) {
-        if (res.errcode === 0) {
+        if (res.errcode === 0) { //连接成功 开启心跳
             const data = res.data;
             user.game = {
                 roomId: data.roomid,
@@ -40,6 +74,7 @@ function addSocketEmit(user) {
                 seatindex: getSeatIndex(data.seats, user.userid)
             };
             refresh(user)
+            startHeart(socket);
         }
     });
 
@@ -70,7 +105,9 @@ function addSocketEmit(user) {
     });
 
     socket.on('user_state_push', function (res) {
-
+        const seat = getSeatByIndex(user, res.userid);
+        seat.online = res.online;
+        refresh(user);
     });
 
     socket.on('user_ready_push', function (res) {
@@ -187,7 +224,7 @@ function addSocketEmit(user) {
     })
 
     socket.on('peng_notify_push', function (res) {
-
+        doPeng(user, res.userid, res.pai)
     });
 
     socket.on('guo_notify_push', function (res) {
@@ -196,6 +233,10 @@ function addSocketEmit(user) {
 
     socket.on('guo_result', function (res) {
         console.log('guo_result', res);
+    });
+
+    socket.on('guo_hu_push', function (res) {
+        console.log('guo_hu_push', res);
     });
 
     socket.on('game_mopai_push', function (res) {
@@ -230,6 +271,25 @@ function doChupai(user, si, pai) {
         }
     }
     refresh(user);
+}
+
+// 碰牌处理
+function doPeng(user, userid, pai) {
+    const seat = getSeatByIndex(user, userid);
+    if (seat.holds) {
+        for (let i = 0; i < 2; i++) {
+            const index = seat.holds.indexOf(pai);
+            seat.holds.splice(index, 1);
+        }
+    }
+    const pengs = seat.pengs;
+    pengs.push(pai);
+    refresh(user);
+}
+
+// 杠牌处理
+function doGange(user) {
+
 }
 
 // 定缺

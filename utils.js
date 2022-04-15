@@ -46,12 +46,12 @@ function refresh(user) {
         const divs = [];
         if (holds) {
             holds.sort((a, b) => a - b);
-            divs.push(`<div class="box mj-list">${holds.map(x => `<span class="mj" id="${user.name}-${x}">${nameMap.get(x)}</span>`).join('')}</div>`)
+            divs.push(`<div class="box mj-list">${holds.map(x => `<span class="mj mjh" id="${user.name}-${x}">${nameMap.get(x)}</span>`).join('')}</div>`)
         }
 
         if (folds) {
-            folds = folds.map(x => nameMap.get(x));
-            divs.push(`<div class="box mj-list">${folds.map(x => `<span class="mj">${x}</span>`).join('')}</div>`)
+            folds = folds.map(x => x);
+            divs.push(`<div class="box mj-list">${folds.map(x => `<span class="mj">${nameMap.get(x)}</span>`).join('')}</div>`)
         }
 
         $(`#${name}-pai`).html(divs.join(''))
@@ -60,6 +60,7 @@ function refresh(user) {
         turn = game.turn;
     }
     $('#chupaiIndex').html(turn);
+    $(`#${name}-state`).html(user.game ? '在线' : '离线')
     $(`#${name}`).html(syntaxHighlight({ ...user, sio: '' }));
 }
 
